@@ -1,0 +1,71 @@
+--Load Excel files into SQL Server as tables based on folder structure using the following instructions:
+
+Requirements:
+
+You need Python installed on your machine.
+The required Python libraries: pandas, sqlalchemy, pyodbc.
+Microsoft SQL Server setup and running.
+You need to know the connection details for the SQL Server.
+Excel files should be in a specified folder.
+Steps to set up the environment:
+
+First, make sure you've installed the necessary packages:
+
+Copy code
+pip install pandas sqlalchemy pyodbc openpyxl
+
+/*
+ODBC Driver: You will probably have ODBC Driver 17 for SQL Server installed with SQL Server Management Studio 19.0, 
+so the connection string mentioned in the previous script should be correct. If you face any connection issues, 
+make sure to verify the driver name in the "ODBC Data Source Administrator" on your machine.
+Excel files will append data to existing tables.
+If an Excel file fails, it will log an error with an explanation and then continue with other files.*/
+
+import os
+import pandas as pd
+from sqlalchemy import create_engine
+
+# Settings
+FOLDER_PATH = 'path_to_excel_files'  # Replace with the path to your Excel files
+SQL_SERVER_CONNECTION_STRING = 'mssql+pyodbc://username:password@server_name/database_name?driver=ODBC+Driver+17+for+SQL+Server'  # Update with your connection details
+
+def load_excel_to_sql_server(file_path, connection_string):
+    try:
+        # Load the Excel file into a DataFrame
+        df = pd.read_excel(file_path, engine='openpyxl', header=0)  # Assuming header is in the first row
+
+        # Extract a table name from the Excel file name
+        table_name = os.path.splitext(os.path.basename(file_path))[0]
+
+        # Use the connection string to connect to the database
+        engine = create_engine(connection_string)
+
+        # Append the DataFrame to the SQL Server table
+        df.to_sql(table_name, engine, if_exists='append', index=False)
+        print(f"Appended data from {file_path} to SQL Server table '{table_name}'.")
+    
+    except Exception as e:
+        print(f"Error processing file {file_path}. Error: {e}")
+
+if __name__ == '__main__':
+    for file_name in os.listdir(FOLDER_PATH):
+        if file_name.endswith('.xlsx') or file_name.endswith('.xls'):
+            full_file_path = os.path.join(FOLDER_PATH, file_name)
+            load_excel_to_sql_server(full_file_path, SQL_SERVER_CONNECTION_STRING)
+
+/*
+Steps to Execute:
+Update FOLDER_PATH with the absolute path of the directory containing the Excel files.
+Update the SQL_SERVER_CONNECTION_STRING with your own SQL Server credentials, server name, and database name.
+Run the Python script.
+Notes:
+
+The if_exists='append' parameter ensures that data is appended to the existing table.
+The script now includes a try-except block that catches any error that might arise when processing an Excel file. If there's an error, it will print the error message and move on to the next file.
+Now you can execute the script to load the Excel files into SQL Server as per your requirements. If there are any issues, the error messages will provide guidance on the cause.
+*/
+
+
+
+
+
